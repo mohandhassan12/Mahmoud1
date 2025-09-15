@@ -163,7 +163,7 @@ async function addDiscount(ev){
   const reason=document.getElementById('discountReason').value;
   const { error }=await supabase.from('discounts').insert({employee_id,discount_type,discount_date,reason});
   if(error) return Swal.fire('خطأ',error.message,'error');
-  Swal.fire('تم','خصمت و ارتحت ي كسمك  ','success');
+  Swal.fire('تم',' تم تسجيل الخصم','success');
   ev.target.reset(); loadDiscounts();
 }
 
