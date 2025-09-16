@@ -23,12 +23,14 @@
       margin-bottom: 30px;
       box-shadow: 0 6px 15px rgba(0,0,0,.12);
     }
-    .card { border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,.05); border: none; }
+    .card { border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,.05); border: none; margin-bottom: 20px; }
     .card-header { background: linear-gradient(90deg,#3498db,#2c3e50); color:#fff; font-weight:bold; }
     .btn-primary { background: linear-gradient(135deg,#2c3e50,#4a6580); border: none; }
     .btn-success { background: linear-gradient(135deg,#27ae60,#219653); border: none; }
     .btn-danger { background: linear-gradient(135deg,#e74c3c,#c0392b); border: none; }
+    .btn { border-radius: 8px; }
     .table thead th { background-color:#2c3e50;color:#fff; }
+    textarea, input, select { border-radius: 8px!important; }
   </style>
 </head>
 <body>
@@ -39,14 +41,14 @@
 
   <div class="container">
     <!-- إدارة الموظفين -->
-    <div class="card mb-4">
+    <div class="card">
       <div class="card-header"><i class="fas fa-users"></i> إدارة الموظفين</div>
       <div class="card-body">
         <form id="employeeForm" class="row g-3">
           <div class="col-md-4"><input type="text" id="employeeName" class="form-control" placeholder="اسم الموظف" required></div>
           <div class="col-md-4"><input type="text" id="employeeId" class="form-control" placeholder="رقم الموظف" required></div>
           <div class="col-md-4"><input type="text" id="employeePosition" class="form-control" placeholder="الوظيفة" required></div>
-          <div class="col-12"><button class="btn btn-primary w-100" type="submit"><i class="fas fa-plus"></i> إضافة موظف</button></div>
+          <div class="col-12"><button class="btn btn-primary" type="submit"><i class="fas fa-plus"></i> إضافة موظف</button></div>
         </form>
         <hr>
         <div class="table-responsive">
@@ -59,7 +61,7 @@
     </div>
 
     <!-- تسجيل خصم -->
-    <div class="card mb-4">
+    <div class="card">
       <div class="card-header"><i class="fas fa-minus-circle"></i> تسجيل خصم جديد</div>
       <div class="card-body">
         <form id="discountForm" class="row g-3">
@@ -78,7 +80,7 @@
           </div>
           <div class="col-md-4"><input type="date" id="discountDate" class="form-control" required></div>
           <div class="col-12"><textarea id="discountReason" class="form-control" placeholder="سبب الخصم" required></textarea></div>
-          <div class="col-12"><button class="btn btn-primary w-100" type="submit"><i class="fas fa-save"></i> حفظ الخصم</button></div>
+          <div class="col-12"><button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> حفظ الخصم</button></div>
         </form>
       </div>
     </div>
@@ -92,17 +94,129 @@
           <button id="clearDiscountsBtn" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> مسح كل الخصومات</button>
         </div>
       </div>
-      <div class="card-body table-responsive">
-        <table class="table table-striped">
-          <thead><tr><th>التاريخ</th><th>الموظف</th><th>الرقم</th><th>الوظيفة</th><th>نوع الخصم</th><th>السبب</th></tr></thead>
-          <tbody id="discountsTable"></tbody>
-        </table>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead><tr><th>التاريخ</th><th>الموظف</th><th>الرقم</th><th>الوظيفة</th><th>نوع الخصم</th><th>السبب</th></tr></thead>
+            <tbody id="discountsTable"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
 <script>
-// هنا هتحط كود JavaScript الخاص بالتعامل مع Supabase أو Netlify Functions
+const supabase = window.supabase.createClient(
+  "/.netlify/functions/supabase-url",
+  "/.netlify/functions/supabase-key"
+);
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadEmployees();
+  await loadDiscounts();
+
+  document.getElementById('employeeForm').addEventListener('submit', addEmployee);
+  document.getElementById('discountForm').addEventListener('submit', addDiscount);
+  document.getElementById('exportBtn').addEventListener('click', exportExcel);
+  document.getElementById('clearDiscountsBtn').addEventListener('click', clearDiscounts);
+});
+
+async function loadEmployees(){
+  const { data } = await supabase.from('employees').select('*').order('created_at',{ascending:false});
+  const tbody = document.getElementById('employeesTable'); tbody.innerHTML='';
+  const select = document.getElementById('discountEmployee'); select.innerHTML='<option value=\"\">اختر الموظف...</option>';
+  if(!data) return;
+  data.forEach((e,i)=>{
+    tbody.innerHTML+=`<tr><td>${i+1}</td><td>${e.name}</td><td>${e.emp_code}</td><td>${e.position}</td>
+      <td><button class=\"btn btn-sm btn-danger\" onclick=\"deleteEmployee('${e.id}')\">حذف</button></td></tr>`;
+    select.innerHTML+=<option value=\"${e.id}\">${e.name} (${e.emp_code})</option>;
+  });
+}
+
+async function addEmployee(ev){
+  ev.preventDefault();
+  const name=document.getElementById('employeeName').value;
+  const emp_code=document.getElementById('employeeId').value;
+  const position=document.getElementById('employeePosition').value;
+  const { error }= await supabase.from('employees').insert({name,emp_code,position});
+  if(error) return Swal.fire('خطأ',error.message,'error');
+  Swal.fire('تم','تم إضافة الموظف بنجاح','success');
+  ev.target.reset(); loadEmployees();
+}
+
+async function deleteEmployee(id){
+  await supabase.from('employees').delete().eq('id',id);
+  Swal.fire('تم','تم حذف الموظف','success');
+  loadEmployees(); loadDiscounts();
+}
+
+async function loadDiscounts(){
+  const { data } = await supabase.from('discounts').select('*, employees(name,emp_code,position)').order('created_at',{ascending:false});
+  const tbody=document.getElementById('discountsTable'); tbody.innerHTML='';
+  if(!data) return;
+  data.forEach(d=>{
+    tbody.innerHTML+=<tr><td>${d.discount_date}</td><td>${d.employees.name}</td><td>${d.employees.emp_code}</td><td>${d.employees.position}</td><td>${d.discount_type}</td><td>${d.reason}</td></tr>;
+  });
+}
+
+async function addDiscount(ev){
+  ev.preventDefault();
+  const employee_id=document.getElementById('discountEmployee').value;
+  const discount_type=document.getElementById('discountType').value;
+  const discount_date=document.getElementById('discountDate').value;
+  const reason=document.getElementById('discountReason').value;
+  const { error }=await supabase.from('discounts').insert({employee_id,discount_type,discount_date,reason});
+  if(error) return Swal.fire('خطأ',error.message,'error');
+  Swal.fire('تم',' تم تسجيل الخصم','success');
+  ev.target.reset(); loadDiscounts();
+}
+
+async function exportExcel(){
+  const { data } = await supabase.from('discounts')
+    .select('discount_date, employees(name,emp_code,position), discount_type, reason');
+
+  if(!data || data.length===0){
+    return Swal.fire('تنبيه','لا يوجد بيانات لتصديرها','info');
+  }
+
+  const rows = data.map(d=>({
+    "التاريخ": d.discount_date,
+    "الاسم": d.employees.name,
+    "الرقم": d.employees.emp_code,
+    "الوظيفة": d.employees.position,
+    "نوع الخصم": d.discount_type,
+    "السبب": d.reason
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "خصومات");
+  XLSX.writeFile(workbook, "discounts.xlsx");
+
+  Swal.fire('تم','تم تصدير البيانات بنجاح','success');
+}
+
+async function clearDiscounts(){
+  const { value: password } = await Swal.fire({
+    title: 'تأكيد الحذف',
+    input: 'password',
+    inputLabel: 'أدخل كلمة السر لمسح جميع الخصومات',
+    inputPlaceholder: 'كلمة السر',
+    inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
+    showCancelButton: true,
+    confirmButtonText: 'مسح',
+    cancelButtonText: 'إلغاء'
+  });
+
+  if(password === 'admin123'){
+    const { error } = await supabase.from('discounts').delete().neq('id',0);
+    if(error) return Swal.fire('خطأ', error.message, 'error');
+    Swal.fire('تم','تم مسح جميع الخصومات','success');
+    loadDiscounts();
+  } else if(password){
+    Swal.fire('خطأ','كلمة السر غير صحيحة','error');
+  }
+}
 </script>
 </body>
 </html>
