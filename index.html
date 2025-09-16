@@ -108,7 +108,6 @@
 <script>
 const SUPABASE_URL = "https://aiuhkkksescqgvpuizdj.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdWhra2tzZXNjcWd2cHVpemRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NDA0MzgsImV4cCI6MjA3MzUxNjQzOH0.nRN7g_MfiPUbYNx16J_aMWiwNkGRhZSAV72RB7JSlrM";
-
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -167,7 +166,7 @@ async function addDiscount(ev){
   const reason=document.getElementById('discountReason').value;
   const { error }=await supabase.from('discounts').insert({employee_id,discount_type,discount_date,reason});
   if(error) return Swal.fire('خطأ',error.message,'error');
-  Swal.fire('تم',' تم تسجيل الخصم','success');
+  Swal.fire('تم','تم تسجيل الخصم بنجاح','success');
   ev.target.reset(); loadDiscounts();
 }
 
