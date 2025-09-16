@@ -198,7 +198,7 @@ async function exportExcel(){
   if(error) return showErr(error.message);
   if(!data||data.length===0) return Swal.fire('تنبيه','لا يوجد بيانات','info');
   const rows=data.map(d=>({"التاريخ":d.discount_date,"الاسم":d.employees?.name||'',"الرقم":d.employees?.emp_code||'',"الوظيفة":d.employees?.position||'',"نوع الخصم":d.discount_type,"السبب":d.reason}));
-  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"خصومات");XLSX.writeFile(wb,"discounts.xlsx");
+  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"خصومات");XLSX.writeFile(wb,"salary deduction.xlsx");
   showOk('تم التصدير');
 }
 
