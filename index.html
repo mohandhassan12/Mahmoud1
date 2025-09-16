@@ -27,7 +27,6 @@
     .header{background:linear-gradient(135deg,var(--purple-1),var(--purple-2));color:#fff;padding:22px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.08);text-align:center}
     .header h1{margin:0;font-size:20px}
     .header p{margin:6px 0 0;font-size:13px;opacity:.9}
-
     .card{border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.04);border:0;margin-top:16px;background:#fff}
     .card .card-header{background:linear-gradient(90deg,var(--blue-1),var(--purple-1));color:#fff;font-weight:700;border-radius:12px 12px 0 0;padding:12px 16px}
     .card-body{padding:14px}
@@ -46,7 +45,7 @@
   <div class="wrap">
     <div class="header">
       <h1><i class="fas fa-file-invoice-dollar"></i> نظام إدارة خصومات الموظفين</h1>
-      <p class="small">واجهة واحدة متجاوبة — تعمل مع جداول employees و discounts (id أرقام)</p>
+      <p class="small">واجهة واحدة متجاوبة — تعمل مع جداول employees و discounts</p>
     </div>
 
     <!-- الموظفين -->
@@ -62,7 +61,7 @@
         <hr>
         <div class="table-responsive">
           <table class="table table-hover">
-            <thead><tr><th style="width:6%">#</th><th>الاسم</th><th>الرمز</th><th>الوظيفة</th><th style="width:14%">الإجراء</th></tr></thead>
+            <thead><tr><th>#</th><th>الاسم</th><th>الرمز</th><th>الوظيفة</th><th>الإجراء</th></tr></thead>
             <tbody id="employeesTable"></tbody>
           </table>
         </div>
@@ -112,14 +111,9 @@
         </div>
       </div>
     </div>
-
   </div>
 
 <script>
-/*
-تأكد أنك أنشأت الجداول بالـ SQL serial وأنفخت البيانات.
-هذا الكود يتصل مباشرة بـ Supabase. استبدل القيم بالـ URL و KEY الخاصين بمشروعك.
-*/
 const SUPABASE_URL = "https://aiuhkkksescqgvpuizdj.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdWhra2tzZXNjcWd2cHVpemRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NDA0MzgsImV4cCI6MjA3MzUxNjQzOH0.nRN7g_MfiPUbYNx16J_aMWiwNkGRhZSAV72RB7JSlrM";
 
@@ -128,144 +122,103 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Helpers
 function showErr(msg){ Swal.fire('خطأ', msg, 'error'); }
 function showOk(msg){ Swal.fire('تم', msg, 'success'); }
+function showLoading(msg="جاري التحميل..."){ Swal.fire({title:msg,allowOutsideClick:false,didOpen:()=>{Swal.showLoading();}});}
+function hideLoading(){ Swal.close(); }
+function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
 // Load employees
 async function loadEmployees(){
-  try {
-    const { data, error } = await supabase.from('employees').select('*').order('id',{ascending:true});
-    if(error) return showErr(error.message);
-    const tbody = document.getElementById('employeesTable');
-    const select = document.getElementById('discountEmployee');
-    tbody.innerHTML = ''; select.innerHTML = '<option value=\"\">اختر الموظف...</option>';
-    if(!data) return;
-    data.forEach((e,i)=>{
-      tbody.insertAdjacentHTML('beforeend',
-        `<tr>
-          <td>${e.id}</td>
-          <td>${escapeHtml(e.name)}</td>
-          <td>${escapeHtml(e.emp_code)}</td>
-          <td>${escapeHtml(e.position)}</td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-outline-dark" onclick="deleteEmployee(${e.id})"><i class="fas fa-trash"></i> حذف</button>
-          </td>
-        </tr>`);
-      select.insertAdjacentHTML('beforeend', <option value="${e.id}">${escapeHtml(e.name)} (${escapeHtml(e.emp_code)})</option>);
-    });
-  } catch (err) { showErr(err.message); }
+  showLoading("تحميل الموظفين...");
+  const { data, error } = await supabase.from('employees').select('*').order('id',{ascending:true});
+  hideLoading();
+  if(error) return showErr(error.message);
+  const tbody=document.getElementById('employeesTable');const select=document.getElementById('discountEmployee');
+  tbody.innerHTML='';select.innerHTML='<option value=\"\">اختر الموظف...</option>';
+  data.forEach(e=>{
+    tbody.insertAdjacentHTML('beforeend',
+      `<tr><td>${e.id}</td><td>${escapeHtml(e.name)}</td><td>${escapeHtml(e.emp_code)}</td><td>${escapeHtml(e.position)}</td>
+       <td class="text-end"><button class="btn btn-sm btn-outline-dark" onclick="deleteEmployee(${e.id})"><i class="fas fa-trash"></i> حذف</button></td></tr>`);
+    select.insertAdjacentHTML('beforeend', `<option value="${e.id}">${escapeHtml(e.name)} (${escapeHtml(e.emp_code)})</option>`);
+  });
 }
 
 // Add employee
 async function addEmployee(ev){
   ev.preventDefault();
-  const name = document.getElementById('employeeName').value.trim();
-  const emp_code = document.getElementById('employeeId').value.trim();
-  const position = document.getElementById('employeePosition').value.trim();
+  const name=employeeName.value.trim(), emp_code=employeeId.value.trim(), position=employeePosition.value.trim();
   if(!name||!emp_code||!position) return showErr('اكمل كل الحقول');
-  const { data, error } = await supabase.from('employees').insert({ name, emp_code, position }).select();
+  showLoading("جاري الإضافة...");
+  const { error } = await supabase.from('employees').insert({ name, emp_code, position });
+  hideLoading();
   if(error) return showErr(error.message);
-  showOk('تم إضافة الموظف');
-  ev.target.reset();
-  loadEmployees();
+  showOk('تم إضافة الموظف');ev.target.reset();loadEmployees();
 }
 
 // Delete employee
 async function deleteEmployee(id){
-  const res = await Swal.fire({ title:'تأكيد حذف', text:'هل تريد حذف هذا الموظف؟', icon:'warning', showCancelButton:true, confirmButtonText:'نعم' });
+  const res=await Swal.fire({title:'تأكيد حذف',text:'هل تريد حذف هذا الموظف؟',icon:'warning',showCancelButton:true,confirmButtonText:'نعم'});
   if(!res.isConfirmed) return;
-  const { error } = await supabase.from('employees').delete().eq('id', id);
+  showLoading("جار الحذف...");
+  const { error } = await supabase.from('employees').delete().eq('id',id);
+  hideLoading();
   if(error) return showErr(error.message);
-  showOk('تم الحذف');
-  loadEmployees(); loadDiscounts();
+  showOk('تم الحذف');loadEmployees();loadDiscounts();
 }
 
-// Load discounts with joined employee info
+// Load discounts
 async function loadDiscounts(){
-  try {
-    const { data, error } = await supabase
-      .from('discounts')
-      .select('id, discount_date, discount_type, reason, employees(id, name, emp_code, position)')
-      .order('id',{ascending:false});
-    if(error) return showErr(error.message);
-    const tbody = document.getElementById('discountsTable'); tbody.innerHTML = '';
-    if(!data) return;
-    data.forEach(d=>{
-      const emp = d.employees || {};
-      tbody.insertAdjacentHTML('beforeend',
-        `<tr>
-          <td>${d.discount_date}</td>
-          <td>${escapeHtml(emp.name||'')}</td>
-          <td>${escapeHtml(emp.emp_code||'')}</td>
-          <td>${escapeHtml(emp.position||'')}</td>
-          <td>${escapeHtml(String(d.discount_type))}</td>
-          <td>${escapeHtml(d.reason||'')}</td>
-        </tr>`);
-    });
-  } catch(err){ showErr(err.message); }
+  showLoading("تحميل الخصومات...");
+  const { data, error } = await supabase.from('discounts').select('id, discount_date, discount_type, reason, employees(id, name, emp_code, position)').order('id',{ascending:false});
+  hideLoading();
+  if(error) return showErr(error.message);
+  const tbody=document.getElementById('discountsTable');tbody.innerHTML='';
+  data.forEach(d=>{
+    const emp=d.employees||{};
+    tbody.insertAdjacentHTML('beforeend',`<tr><td>${d.discount_date}</td><td>${escapeHtml(emp.name||'')}</td><td>${escapeHtml(emp.emp_code||'')}</td><td>${escapeHtml(emp.position||'')}</td><td>${escapeHtml(String(d.discount_type))}</td><td>${escapeHtml(d.reason||'')}</td></tr>`);
+  });
 }
 
 // Add discount
 async function addDiscount(ev){
   ev.preventDefault();
-  const employee_id = parseInt(document.getElementById('discountEmployee').value);
-  const discount_type = document.getElementById('discountType').value;
-  const discount_date = document.getElementById('discountDate').value;
-  const reason = document.getElementById('discountReason').value.trim();
-  if(!employee_id || !discount_type || !discount_date || !reason) return showErr('اكمل كل الحقول');
-  const { data, error } = await supabase.from('discounts').insert({ employee_id, discount_type, discount_date, reason }).select();
+  const employee_id=parseInt(discountEmployee.value), discount_type=discountType.value, discount_date=discountDate.value, reason=discountReason.value.trim();
+  if(!employee_id||!discount_type||!discount_date||!reason) return showErr('اكمل كل الحقول');
+  showLoading("جار التسجيل...");
+  const { error } = await supabase.from('discounts').insert({ employee_id, discount_type, discount_date, reason });
+  hideLoading();
   if(error) return showErr(error.message);
-  showOk('تم تسجيل الخصم');
-  ev.target.reset();
-  loadDiscounts();
+  showOk('تم تسجيل الخصم');ev.target.reset();loadDiscounts();
 }
 
 // Export excel
 async function exportExcel(){
+  showLoading("تجهيز الملف...");
   const { data, error } = await supabase.from('discounts').select('discount_date, discount_type, reason, employees(name, emp_code, position)');
+  hideLoading();
   if(error) return showErr(error.message);
-  if(!data || data.length===0) return Swal.fire('تنبيه','لا يوجد بيانات لتصديرها','info');
-  const rows = data.map(d=>({
-    "التاريخ": d.discount_date,
-    "الاسم": d.employees?.name || '',
-    "الرقم": d.employees?.emp_code || '',
-    "الوظيفة": d.employees?.position || '',
-    "نوع الخصم": d.discount_type,
-    "السبب": d.reason
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "خصومات");
-  XLSX.writeFile(wb, "discounts.xlsx");
-  Swal.fire('تم','تم تصدير الملف','success');
+  if(!data||data.length===0) return Swal.fire('تنبيه','لا يوجد بيانات','info');
+  const rows=data.map(d=>({"التاريخ":d.discount_date,"الاسم":d.employees?.name||'',"الرقم":d.employees?.emp_code||'',"الوظيفة":d.employees?.position||'',"نوع الخصم":d.discount_type,"السبب":d.reason}));
+  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"خصومات");XLSX.writeFile(wb,"discounts.xlsx");
+  showOk('تم التصدير');
 }
 
-// Clear all discounts (protected by prompt)
+// Clear all discounts
 async function clearDiscounts(){
-  const { value: password } = await Swal.fire({
-    title: 'تأكيد الحذف',
-    input: 'password',
-    inputLabel: 'أدخل كلمة السر لمسح جميع الخصومات',
-    inputPlaceholder: 'كلمة السر',
-    showCancelButton: true,
-    confirmButtonText: 'مسح'
-  });
-  if(!password) return;
-  if(password !== 'admin123') return showErr('كلمة السر غير صحيحة');
-  const { error } = await supabase.from('discounts').delete().neq('id',0);
+  const { value: password }=await Swal.fire({title:'تأكيد الحذف',input:'password',inputLabel:'ادخل كلمة السر',inputPlaceholder:'كلمة السر',showCancelButton:true,confirmButtonText:'مسح'});
+  if(!password) return;if(password!=='admin123') return showErr('كلمة السر غير صحيحة');
+  showLoading("مسح الخصومات...");
+  const { error }=await supabase.from('discounts').delete().neq('id',0);
+  hideLoading();
   if(error) return showErr(error.message);
-  showOk('تم مسح جميع الخصومات');
-  loadDiscounts();
+  showOk('تم المسح');loadDiscounts();
 }
 
-// small escape to prevent injected HTML from DB
-function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  loadEmployees();
-  loadDiscounts();
-  document.getElementById('employeeForm').addEventListener('submit', addEmployee);
-  document.getElementById('discountForm').addEventListener('submit', addDiscount);
-  document.getElementById('exportBtn').addEventListener('click', exportExcel);
-  document.getElementById('clearDiscountsBtn').addEventListener('click', clearDiscounts);
+document.addEventListener('DOMContentLoaded',()=>{
+  loadEmployees();loadDiscounts();
+  employeeForm.addEventListener('submit',addEmployee);
+  discountForm.addEventListener('submit',addDiscount);
+  exportBtn.addEventListener('click',exportExcel);
+  clearDiscountsBtn.addEventListener('click',clearDiscounts);
 });
 </script>
 </body>
