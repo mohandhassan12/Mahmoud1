@@ -11,6 +11,16 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    body { background: #f5f7fa; font-family: "Tajawal", sans-serif; }
+    h3 { color: #0d6efd; font-weight: bold; }
+    .card { border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .table thead { background-color: #0d6efd; color: white; }
+    .btn { border-radius: 8px; }
+    .loader { display: none; text-align: center; padding: 20px; }
+    .loader i { font-size: 30px; color: #0d6efd; animation: spin 1s linear infinite; }
+    @keyframes spin {0% {transform: rotate(0deg);}100% {transform: rotate(360deg);} }
+  </style>
 </head>
 <body>
   <div class="container py-3">
@@ -18,15 +28,16 @@
 
     <!-- الموظفين -->
     <div class="card mb-3">
-      <div class="card-header"><i class="fas fa-users"></i> إدارة الموظفين</div>
+      <div class="card-header bg-primary text-white"><i class="fas fa-users"></i> إدارة الموظفين</div>
       <div class="card-body">
-        <form id="employeeForm" class="row g-3">
-          <div class="col-md-4"><input id="employeeName" class="form-control" placeholder="اسم الموظف" required></div>
-          <div class="col-md-4"><input id="employeeId" class="form-control" placeholder="رقم الموظف" required></div>
-          <div class="col-md-4"><input id="employeePosition" class="form-control" placeholder="الوظيفة" required></div>
-          <div class="col-12 text-end"><button class="btn btn-primary" type="submit"><i class="fas fa-plus"></i> إضافة موظف</button></div>
+        <form id="employeeForm" class="row g-2">
+          <div class="col-md-4 col-12"><input id="employeeName" class="form-control" placeholder="اسم الموظف" required></div>
+          <div class="col-md-4 col-12"><input id="employeeId" class="form-control" placeholder="رقم الموظف" required></div>
+          <div class="col-md-4 col-12"><input id="employeePosition" class="form-control" placeholder="الوظيفة" required></div>
+          <div class="col-12 text-end"><button class="btn btn-primary w-100 w-md-auto" type="submit"><i class="fas fa-plus"></i> إضافة موظف</button></div>
         </form>
         <hr>
+        <div class="loader" id="empLoader"><i class="fas fa-spinner"></i> تحميل الموظفين...</div>
         <div class="table-responsive">
           <table class="table table-hover">
             <thead><tr><th>#</th><th>الاسم</th><th>الرمز</th><th>الوظيفة</th><th>الإجراء</th></tr></thead>
@@ -38,15 +49,15 @@
 
     <!-- تسجيل خصم -->
     <div class="card mb-3">
-      <div class="card-header"><i class="fas fa-minus-circle"></i> تسجيل خصم جديد</div>
+      <div class="card-header bg-danger text-white"><i class="fas fa-minus-circle"></i> تسجيل خصم جديد</div>
       <div class="card-body">
-        <form id="discountForm" class="row g-3">
-          <div class="col-md-4">
+        <form id="discountForm" class="row g-2">
+          <div class="col-md-4 col-12">
             <select id="discountEmployee" class="form-select" required>
               <option value="">اختر الموظف...</option>
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-4 col-12">
             <select id="discountType" class="form-select" required>
               <option value="">نوع الخصم...</option>
               <option value="0.5">نصف يوم</option>
@@ -55,21 +66,22 @@
             </select>
           </div>
           <div class="col-12"><textarea id="discountReason" class="form-control" rows="2" placeholder="سبب الخصم" required></textarea></div>
-          <div class="col-12 text-end"><button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> حفظ الخصم</button></div>
+          <div class="col-12 text-end"><button class="btn btn-danger w-100 w-md-auto" type="submit"><i class="fas fa-save"></i> حفظ الخصم</button></div>
         </form>
       </div>
     </div>
 
     <!-- السجلات -->
     <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
+      <div class="card-header d-flex justify-content-between align-items-center bg-secondary text-white">
         <div><i class="fas fa-list"></i> سجل الخصومات</div>
-        <div class="d-flex gap-2">
-          <button id="exportBtn" class="btn btn-outline-dark btn-sm"><i class="fas fa-download"></i> تصدير Excel</button>
-          <button id="clearDiscountsBtn" class="btn btn-outline-dark btn-sm"><i class="fas fa-trash"></i> مسح كل الخصومات</button>
+        <div class="d-flex gap-2 flex-wrap">
+          <button id="exportBtn" class="btn btn-light btn-sm"><i class="fas fa-download"></i> تصدير Excel</button>
+          <button id="clearDiscountsBtn" class="btn btn-light btn-sm"><i class="fas fa-trash"></i> مسح الكل</button>
         </div>
       </div>
       <div class="card-body">
+        <div class="loader" id="discLoader"><i class="fas fa-spinner"></i> تحميل السجلات...</div>
         <div class="table-responsive">
           <table class="table table-striped">
             <thead><tr><th>التاريخ</th><th>الموظف</th><th>الرمز</th><th>الوظيفة</th><th>نوع الخصم</th><th>السبب</th></tr></thead>
@@ -80,18 +92,42 @@
     </div>
   </div>
 
+  <!-- Modal تعديل موظف -->
+  <div class="modal fade" id="editEmployeeModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editEmployeeForm">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fas fa-edit"></i> تعديل بيانات الموظف</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="editEmployeeId">
+            <div class="mb-3"><label class="form-label">الاسم</label><input type="text" id="editEmployeeName" class="form-control" required></div>
+            <div class="mb-3"><label class="form-label">رقم الموظف</label><input type="text" id="editEmployeeCode" class="form-control" required></div>
+            <div class="mb-3"><label class="form-label">الوظيفة</label><input type="text" id="editEmployeePosition" class="form-control" required></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
 <script>
 const SUPABASE_URL = "https://aiuhkkksescqgvpuizdj.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdWhra2tzZXNjcWd2cHVpemRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NDA0MzgsImV4cCI6MjA3MzUxNjQzOH0.nRN7g_MfiPUbYNx16J_aMWiwNkGRhZSAV72RB7JSlrM";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdWhra2tzZXNjcWd2cHVpemRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NDA0MzgsImV4cCI6MjA3MzUxNjQzOH0.nRN7g_MfiPUbYNx16J_aMWiwNkGRhZSAV72RB7JSlrM"; // استبدل بمفتاحك
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let editModal;
 
 function showErr(msg){ Swal.fire('خطأ', msg, 'error'); }
 function showOk(msg){ Swal.fire('تم', msg, 'success'); }
-function showLoading(msg="..."){ Swal.fire({title:msg,allowOutsideClick:false,didOpen:()=>Swal.showLoading()}); }
-function hideLoading(){ Swal.close(); }
 function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-// تحقق من كلمة السر
+// كلمة السر
 async function checkPassword(){
   const { value: password } = await Swal.fire({title:'كلمة السر',input:'password',inputLabel:'ادخل كلمة السر',showCancelButton:true});
   if(!password) return false;
@@ -103,7 +139,9 @@ async function checkPassword(){
 
 // الموظفين
 async function loadEmployees(){
+  document.getElementById('empLoader').style.display="block";
   const { data, error } = await supabase.from('employees').select('*').order('id',{ascending:true});
+  document.getElementById('empLoader').style.display="none";
   if(error) return showErr(error.message);
   const tbody=document.getElementById('employeesTable');const select=document.getElementById('discountEmployee');
   tbody.innerHTML='';select.innerHTML='<option value="">اختر الموظف...</option>';
@@ -111,7 +149,8 @@ async function loadEmployees(){
     tbody.insertAdjacentHTML('beforeend',
       `<tr><td>${e.id}</td><td>${escapeHtml(e.name)}</td><td>${escapeHtml(e.emp_code)}</td><td>${escapeHtml(e.position)}</td>
        <td class="text-end">
-         <button class="btn btn-sm btn-outline-dark" onclick="deleteEmployee(${e.id})"><i class="fas fa-trash"></i></button>
+         <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditEmployee(${e.id})"><i class="fas fa-edit"></i></button>
+         <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee(${e.id})"><i class="fas fa-trash"></i></button>
        </td></tr>`);
     select.insertAdjacentHTML('beforeend', `<option value="${e.id}">${escapeHtml(e.name)} (${escapeHtml(e.emp_code)})</option>`);
   });
@@ -134,9 +173,37 @@ async function deleteEmployee(id){
   showOk('تم الحذف');loadEmployees();loadDiscounts();
 }
 
+// تعديل موظف
+async function openEditEmployee(id){
+  const { data, error } = await supabase.from('employees').select('*').eq('id',id).maybeSingle();
+  if(error||!data) return showErr("الموظف غير موجود");
+  document.getElementById('editEmployeeId').value=data.id;
+  document.getElementById('editEmployeeName').value=data.name;
+  document.getElementById('editEmployeeCode').value=data.emp_code;
+  document.getElementById('editEmployeePosition').value=data.position;
+  editModal.show();
+}
+
+async function updateEmployee(ev){
+  ev.preventDefault();
+  if(!await checkPassword()) return;
+  const id=document.getElementById('editEmployeeId').value;
+  const name=document.getElementById('editEmployeeName').value.trim();
+  const emp_code=document.getElementById('editEmployeeCode').value.trim();
+  const position=document.getElementById('editEmployeePosition').value.trim();
+  if(!name||!emp_code||!position) return showErr("اكمل كل الحقول");
+  const { error } = await supabase.from('employees').update({ name, emp_code, position }).eq('id',id);
+  if(error) return showErr(error.message);
+  showOk("تم تعديل البيانات");
+  editModal.hide();
+  loadEmployees();
+}
+
 // الخصومات
 async function loadDiscounts(){
+  document.getElementById('discLoader').style.display="block";
   const { data, error } = await supabase.from('discounts').select('id, discount_date, discount_type, reason, employees(id,name,emp_code,position)').order('id',{ascending:false});
+  document.getElementById('discLoader').style.display="none";
   if(error) return showErr(error.message);
   const tbody=document.getElementById('discountsTable');tbody.innerHTML='';
   data.forEach(d=>{
@@ -173,6 +240,8 @@ async function clearDiscounts(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  editModal=new bootstrap.Modal(document.getElementById('editEmployeeModal'));
+  editEmployeeForm.addEventListener('submit',updateEmployee);
   loadEmployees();loadDiscounts();
   employeeForm.addEventListener('submit',addEmployee);
   discountForm.addEventListener('submit',addDiscount);
@@ -180,5 +249,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   clearDiscountsBtn.addEventListener('click',clearDiscounts);
 });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
