@@ -144,7 +144,11 @@ async function loadEmployees(){
   const tbody = document.getElementById("employeesTable");
   const select = document.getElementById("discountEmployee");
   tbody.innerHTML = ""; select.innerHTML = "<option value=''>اختر الموظف...</option>";
-  data?.forEach(e=>{
+  if(!data?.length){
+    tbody.innerHTML = "<tr><td colspan='5' class='text-center text-muted'>لا يوجد موظفين</td></tr>";
+    return;
+  }
+  data.forEach(e=>{
     tbody.innerHTML += `<tr>
       <td>${e.id}</td><td>${e.name}</td><td>${e.emp_code}</td><td>${e.position}</td>
       <td>
@@ -226,7 +230,11 @@ async function loadDiscounts(){
     .order("id",{ascending:false});
   hideLoader();
   const tbody=document.getElementById("discountsTable"); tbody.innerHTML="";
-  data?.forEach(d=>{
+  if(!data?.length){
+    tbody.innerHTML = "<tr><td colspan='6' class='text-center text-muted'>لا يوجد خصومات</td></tr>";
+    return;
+  }
+  data.forEach(d=>{
     tbody.innerHTML+=`<tr>
       <td>${d.created_at.split("T")[0]}</td>
       <td>${d.employees.name}</td>
@@ -265,7 +273,7 @@ document.getElementById("exportBtn").addEventListener("click", async ()=>{
   }));
   const ws=XLSX.utils.json_to_sheet(rows), wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"خصومات");
-  XLSX.writeFile(wb,"discounts.xlsx");
+  XLSX.writeFile(wb,"salary deduction.xlsx");
 });
 
 document.addEventListener("DOMContentLoaded", ()=>{ loadEmployees(); loadDiscounts(); });
