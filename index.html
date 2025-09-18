@@ -5,57 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>نظام إدارة خصومات الموظفين</title>
 
-  <!-- مكتبات -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- Supabase UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
-  <style>
-    :root{
-      --bg-start:#eef3f7;
-      --bg-end:#f8fafc;
-      --purple-1:#2c3e50;
-      --purple-2:#4a6580;
-      --blue-1:#3498db;
-    }
-    html,body{height:100%;margin:0;font-family:Segoe UI, Tahoma, Geneva, Verdana, sans-serif;background:linear-gradient(180deg,var(--bg-start),var(--bg-end));color:#222}
-    .wrap{max-width:1100px;margin:18px auto;padding:12px}
-    .header{background:linear-gradient(135deg,var(--purple-1),var(--purple-2));color:#fff;padding:22px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.08);text-align:center}
-    .header h1{margin:0;font-size:20px}
-    .header p{margin:6px 0 0;font-size:13px;opacity:.9}
-    .card{border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.04);border:0;margin-top:16px;background:#fff}
-    .card .card-header{background:linear-gradient(90deg,var(--blue-1),var(--purple-1));color:#fff;font-weight:700;border-radius:12px 12px 0 0;padding:12px 16px}
-    .card-body{padding:14px}
-    .form-control, .form-select, textarea{border-radius:10px;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06)}
-    .btn-primary{background:linear-gradient(135deg,var(--purple-1),var(--purple-2));border:none;color:#fff;border-radius:10px}
-    .btn-outline-dark{border-radius:10px}
-    .table thead th{background:transparent;border-bottom:1px solid rgba(0,0,0,0.06)}
-    .table tbody tr td{vertical-align:middle}
-    @media (max-width:767px){
-      .card .card-header{font-size:14px}
-      .header h1{font-size:18px}
-    }
-  </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="header">
-      <h1><i class="fas fa-file-invoice-dollar"></i> نظام إدارة خصومات الموظفين</h1>
-      <p class="small">co.phi.cafe</p>
-    </div>
+  <div class="container py-3">
+    <h3 class="mb-3 text-center"><i class="fas fa-file-invoice-dollar"></i> نظام إدارة خصومات الموظفين</h3>
 
     <!-- الموظفين -->
-    <div class="card">
+    <div class="card mb-3">
       <div class="card-header"><i class="fas fa-users"></i> إدارة الموظفين</div>
       <div class="card-body">
         <form id="employeeForm" class="row g-3">
-          <div class="col-12 col-md-4"><input id="employeeName" class="form-control" placeholder="اسم الموظف" required></div>
-          <div class="col-12 col-md-4"><input id="employeeId" class="form-control" placeholder="رقم الموظف" required></div>
-          <div class="col-12 col-md-4"><input id="employeePosition" class="form-control" placeholder="الوظيفة" required></div>
+          <div class="col-md-4"><input id="employeeName" class="form-control" placeholder="اسم الموظف" required></div>
+          <div class="col-md-4"><input id="employeeId" class="form-control" placeholder="رقم الموظف" required></div>
+          <div class="col-md-4"><input id="employeePosition" class="form-control" placeholder="الوظيفة" required></div>
           <div class="col-12 text-end"><button class="btn btn-primary" type="submit"><i class="fas fa-plus"></i> إضافة موظف</button></div>
         </form>
         <hr>
@@ -69,16 +37,16 @@
     </div>
 
     <!-- تسجيل خصم -->
-    <div class="card">
+    <div class="card mb-3">
       <div class="card-header"><i class="fas fa-minus-circle"></i> تسجيل خصم جديد</div>
       <div class="card-body">
         <form id="discountForm" class="row g-3">
-          <div class="col-12 col-md-4">
+          <div class="col-md-4">
             <select id="discountEmployee" class="form-select" required>
               <option value="">اختر الموظف...</option>
             </select>
           </div>
-          <div class="col-12 col-md-4">
+          <div class="col-md-4">
             <select id="discountType" class="form-select" required>
               <option value="">نوع الخصم...</option>
               <option value="0.5">نصف يوم</option>
@@ -86,7 +54,6 @@
               <option value="3">ثلاثة أيام</option>
             </select>
           </div>
-          <div class="col-12 col-md-4"><input id="discountDate" type="date" class="form-control" placeholder="التاريخ" required></div>
           <div class="col-12"><textarea id="discountReason" class="form-control" rows="2" placeholder="سبب الخصم" required></textarea></div>
           <div class="col-12 text-end"><button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> حفظ الخصم</button></div>
         </form>
@@ -116,99 +83,91 @@
 <script>
 const SUPABASE_URL = "https://aiuhkkksescqgvpuizdj.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdWhra2tzZXNjcWd2cHVpemRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NDA0MzgsImV4cCI6MjA3MzUxNjQzOH0.nRN7g_MfiPUbYNx16J_aMWiwNkGRhZSAV72RB7JSlrM";
-
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Helpers
 function showErr(msg){ Swal.fire('خطأ', msg, 'error'); }
 function showOk(msg){ Swal.fire('تم', msg, 'success'); }
-function showLoading(msg="جاري التحميل..."){ Swal.fire({title:msg,allowOutsideClick:false,didOpen:()=>{Swal.showLoading();}});}
+function showLoading(msg="..."){ Swal.fire({title:msg,allowOutsideClick:false,didOpen:()=>Swal.showLoading()}); }
 function hideLoading(){ Swal.close(); }
 function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-// Load employees
+// تحقق من كلمة السر
+async function checkPassword(){
+  const { value: password } = await Swal.fire({title:'كلمة السر',input:'password',inputLabel:'ادخل كلمة السر',showCancelButton:true});
+  if(!password) return false;
+  const { data, error } = await supabase.rpc('check_admin_password', { p_password: password });
+  if(error) { showErr(error.message); return false; }
+  if(!data) { showErr('كلمة السر غير صحيحة'); return false; }
+  return true;
+}
+
+// الموظفين
 async function loadEmployees(){
-  showLoading("تحميل الموظفين...");
   const { data, error } = await supabase.from('employees').select('*').order('id',{ascending:true});
-  hideLoading();
   if(error) return showErr(error.message);
   const tbody=document.getElementById('employeesTable');const select=document.getElementById('discountEmployee');
-  tbody.innerHTML='';select.innerHTML='<option value=\"\">اختر الموظف...</option>';
+  tbody.innerHTML='';select.innerHTML='<option value="">اختر الموظف...</option>';
   data.forEach(e=>{
     tbody.insertAdjacentHTML('beforeend',
       `<tr><td>${e.id}</td><td>${escapeHtml(e.name)}</td><td>${escapeHtml(e.emp_code)}</td><td>${escapeHtml(e.position)}</td>
-       <td class="text-end"><button class="btn btn-sm btn-outline-dark" onclick="deleteEmployee(${e.id})"><i class="fas fa-trash"></i> حذف</button></td></tr>`);
+       <td class="text-end">
+         <button class="btn btn-sm btn-outline-dark" onclick="deleteEmployee(${e.id})"><i class="fas fa-trash"></i></button>
+       </td></tr>`);
     select.insertAdjacentHTML('beforeend', `<option value="${e.id}">${escapeHtml(e.name)} (${escapeHtml(e.emp_code)})</option>`);
   });
 }
 
-// Add employee
 async function addEmployee(ev){
   ev.preventDefault();
+  if(!await checkPassword()) return;
   const name=employeeName.value.trim(), emp_code=employeeId.value.trim(), position=employeePosition.value.trim();
   if(!name||!emp_code||!position) return showErr('اكمل كل الحقول');
-  showLoading("جاري الإضافة...");
   const { error } = await supabase.from('employees').insert({ name, emp_code, position });
-  hideLoading();
   if(error) return showErr(error.message);
   showOk('تم إضافة الموظف');ev.target.reset();loadEmployees();
 }
 
-// Delete employee
 async function deleteEmployee(id){
-  const res=await Swal.fire({title:'تأكيد حذف',text:'هل تريد حذف هذا الموظف؟',icon:'warning',showCancelButton:true,confirmButtonText:'نعم'});
-  if(!res.isConfirmed) return;
-  showLoading("جار الحذف...");
+  if(!await checkPassword()) return;
   const { error } = await supabase.from('employees').delete().eq('id',id);
-  hideLoading();
   if(error) return showErr(error.message);
   showOk('تم الحذف');loadEmployees();loadDiscounts();
 }
 
-// Load discounts
+// الخصومات
 async function loadDiscounts(){
-  showLoading("تحميل الخصومات...");
-  const { data, error } = await supabase.from('discounts').select('id, discount_date, discount_type, reason, employees(id, name, emp_code, position)').order('id',{ascending:false});
-  hideLoading();
+  const { data, error } = await supabase.from('discounts').select('id, discount_date, discount_type, reason, employees(id,name,emp_code,position)').order('id',{ascending:false});
   if(error) return showErr(error.message);
   const tbody=document.getElementById('discountsTable');tbody.innerHTML='';
   data.forEach(d=>{
     const emp=d.employees||{};
-    tbody.insertAdjacentHTML('beforeend',`<tr><td>${d.discount_date}</td><td>${escapeHtml(emp.name||'')}</td><td>${escapeHtml(emp.emp_code||'')}</td><td>${escapeHtml(emp.position||'')}</td><td>${escapeHtml(String(d.discount_type))}</td><td>${escapeHtml(d.reason||'')}</td></tr>`);
+    tbody.insertAdjacentHTML('beforeend',
+      `<tr><td>${d.discount_date}</td><td>${escapeHtml(emp.name||'')}</td><td>${escapeHtml(emp.emp_code||'')}</td>
+      <td>${escapeHtml(emp.position||'')}</td><td>${escapeHtml(String(d.discount_type))}</td><td>${escapeHtml(d.reason||'')}</td></tr>`);
   });
 }
 
-// Add discount
 async function addDiscount(ev){
   ev.preventDefault();
-  const employee_id=parseInt(discountEmployee.value), discount_type=discountType.value, discount_date=discountDate.value, reason=discountReason.value.trim();
-  if(!employee_id||!discount_type||!discount_date||!reason) return showErr('اكمل كل الحقول');
-  showLoading("جار التسجيل...");
-  const { error } = await supabase.from('discounts').insert({ employee_id, discount_type, discount_date, reason });
-  hideLoading();
+  if(!await checkPassword()) return;
+  const employee_id=parseInt(discountEmployee.value), discount_type=discountType.value, reason=discountReason.value.trim();
+  if(!employee_id||!discount_type||!reason) return showErr('اكمل كل الحقول');
+  const { error } = await supabase.from('discounts').insert({ employee_id, discount_type, reason });
   if(error) return showErr(error.message);
   showOk('تم تسجيل الخصم');ev.target.reset();loadDiscounts();
 }
 
-// Export excel
 async function exportExcel(){
-  showLoading("تجهيز الملف...");
   const { data, error } = await supabase.from('discounts').select('discount_date, discount_type, reason, employees(name, emp_code, position)');
-  hideLoading();
   if(error) return showErr(error.message);
   if(!data||data.length===0) return Swal.fire('تنبيه','لا يوجد بيانات','info');
   const rows=data.map(d=>({"التاريخ":d.discount_date,"الاسم":d.employees?.name||'',"الرقم":d.employees?.emp_code||'',"الوظيفة":d.employees?.position||'',"نوع الخصم":d.discount_type,"السبب":d.reason}));
-  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"خصومات");XLSX.writeFile(wb,"salary deduction.xlsx");
-  showOk('تم التصدير');
+  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"خصومات");XLSX.writeFile(wb,"salary_deduction.xlsx");
 }
 
-// Clear all discounts
 async function clearDiscounts(){
-  const { value: password }=await Swal.fire({title:'تأكيد الحذف',input:'password',inputLabel:'ادخل كلمة السر',inputPlaceholder:'كلمة السر',showCancelButton:true,confirmButtonText:'مسح'});
-  if(!password) return;if(password!=='admin123') return showErr('كلمة السر غير صحيحة');
-  showLoading("مسح الخصومات...");
+  if(!await checkPassword()) return;
   const { error }=await supabase.from('discounts').delete().neq('id',0);
-  hideLoading();
   if(error) return showErr(error.message);
   showOk('تم المسح');loadDiscounts();
 }
