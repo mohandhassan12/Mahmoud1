@@ -104,6 +104,20 @@ const SUPABASE_URL = "https://aiuhkkksescqgvpuizdj.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdWhra2tzZXNjcWd2cHVpemRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NDA0MzgsImV4cCI6MjA3MzUxNjQzOH0.nRN7g_MfiPUbYNx16J_aMWiwNkGRhZSAV72RB7JSlrM";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// === فقاعة التحميل ===
+function showLoader(text="جار التحميل...") {
+  Swal.fire({
+    title: text,
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+}
+function hideLoader(){
+  Swal.close();
+}
+
 // تحقق من كلمة السر
 async function checkPassword(inputPass){
   const { data, error } = await supabase.from("settings").select("admin_password").single();
@@ -115,14 +129,18 @@ async function checkPassword(inputPass){
 async function requirePassword(){
   const { value: password } = await Swal.fire({title:"أدخل كلمة السر",input:"password",showCancelButton:true});
   if(!password) return null;
+  showLoader("جاري التحقق...");
   const ok = await checkPassword(password);
+  hideLoader();
   if(!ok){ Swal.fire("خطأ","كلمة السر غير صحيحة","error"); return null; }
   return password;
 }
 
 // تحميل الموظفين
 async function loadEmployees(){
+  showLoader("تحميل الموظفين...");
   const { data } = await supabase.from("employees").select("*").order("id");
+  hideLoader();
   const tbody = document.getElementById("employeesTable");
   const select = document.getElementById("discountEmployee");
   tbody.innerHTML = ""; select.innerHTML = "<option value=''>اختر الموظف...</option>";
@@ -145,14 +163,18 @@ document.getElementById("employeeForm").addEventListener("submit", async ev=>{
   const name=document.getElementById("employeeName").value;
   const emp_code=document.getElementById("employeeId").value;
   const position=document.getElementById("employeePosition").value;
+  showLoader("إضافة الموظف...");
   await supabase.from("employees").insert({name,emp_code,position});
+  hideLoader();
   Swal.fire("تم","تمت الإضافة","success");
   ev.target.reset(); loadEmployees();
 });
 
 // تعديل موظف
 async function editEmployee(id){
+  showLoader("تحميل بيانات الموظف...");
   const { data } = await supabase.from("employees").select("*").eq("id",id).single();
+  hideLoader();
   const { value: formValues } = await Swal.fire({
     title:"تعديل الموظف",
     html:`<input id="swalName" class="swal2-input" value="${data.name}">
@@ -166,7 +188,9 @@ async function editEmployee(id){
     })
   });
   if(formValues && await requirePassword()){
+    showLoader("جاري التعديل...");
     await supabase.from("employees").update(formValues).eq("id",id);
+    hideLoader();
     Swal.fire("تم","تم التعديل","success"); loadEmployees();
   }
 }
@@ -174,7 +198,9 @@ async function editEmployee(id){
 // حذف موظف
 async function deleteEmployee(id){
   if(!await requirePassword()) return;
+  showLoader("جاري الحذف...");
   await supabase.from("employees").delete().eq("id",id);
+  hideLoader();
   Swal.fire("تم","تم الحذف","success"); loadEmployees(); loadDiscounts();
 }
 
@@ -185,16 +211,20 @@ document.getElementById("discountForm").addEventListener("submit", async ev=>{
   const employee_id=document.getElementById("discountEmployee").value;
   const discount_type=document.getElementById("discountType").value;
   const reason=document.getElementById("discountReason").value;
-  await supabase.from("discounts").insert({employee_id,discount_type,reason}); // created_at من السيرفر
+  showLoader("تسجيل الخصم...");
+  await supabase.from("discounts").insert({employee_id,discount_type,reason});
+  hideLoader();
   Swal.fire("تم","تم تسجيل الخصم","success");
   ev.target.reset(); loadDiscounts();
 });
 
 // تحميل الخصومات
 async function loadDiscounts(){
+  showLoader("تحميل الخصومات...");
   const { data } = await supabase.from("discounts")
     .select("id, discount_type, reason, created_at, employees(name,emp_code,position)")
     .order("id",{ascending:false});
+  hideLoader();
   const tbody=document.getElementById("discountsTable"); tbody.innerHTML="";
   data?.forEach(d=>{
     tbody.innerHTML+=`<tr>
@@ -211,15 +241,19 @@ async function loadDiscounts(){
 // مسح الخصومات
 document.getElementById("clearDiscountsBtn").addEventListener("click", async ()=>{
   if(!await requirePassword()) return;
+  showLoader("جاري المسح...");
   await supabase.from("discounts").delete().neq("id",0);
+  hideLoader();
   Swal.fire("تم","تم مسح جميع الخصومات","success");
   loadDiscounts();
 });
 
 // تصدير Excel
 document.getElementById("exportBtn").addEventListener("click", async ()=>{
+  showLoader("جاري التصدير...");
   const { data } = await supabase.from("discounts")
     .select("created_at, discount_type, reason, employees(name,emp_code,position)");
+  hideLoader();
   if(!data?.length) return Swal.fire("لا يوجد بيانات","","info");
   const rows=data.map(d=>({
     "التاريخ":d.created_at.split("T")[0],
